@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ebook Reader</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="header__title">
+      <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+        <rect width="48" height="48" rx="8" fill="#4a90d9"/>
+        <rect x="10" y="8" width="20" height="28" rx="2" fill="white" opacity="0.95"/>
+        <rect x="10" y="8" width="4" height="28" rx="1" fill="#2c5f9e"/>
+      </svg>
+      Ebook Reader
+    </h1>
+    <button class="btn btn--primary" id="open-book-btn" type="button">
+      + Open Book
+    </button>
+    <input type="file" id="file-input" accept=".epub" style="position:absolute;left:-9999px;opacity:0">
+  </header>
+
+  <div id="error-banner" class="error-banner" hidden>
+    <span id="error-text"></span>
+    <button id="error-dismiss" aria-label="Dismiss error">&times;</button>
+  </div>
+
+  <div id="loading-indicator" class="loading-indicator" hidden>
+    <div class="spinner"></div>
+    <span>Loading book…</span>
+  </div>
+
+  <main id="library-grid" class="library-grid">
+    <div id="empty-state" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 48 48" fill="none">
+        <rect x="6" y="4" width="28" height="38" rx="3" fill="#ddd"/>
+        <rect x="6" y="4" width="6" height="38" rx="2" fill="#bbb"/>
+        <rect x="6" y="44" width="36" height="4" rx="2" fill="#ccc"/>
+      </svg>
+      <p>No books yet.</p>
+      <p class="empty-state__hint">Click <strong>+ Open Book</strong> to add your first EPUB.</p>
+    </div>
+  </main>
+
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
