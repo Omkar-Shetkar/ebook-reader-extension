@@ -56,9 +56,18 @@ describe('Keyboard Shortcut Helpers', () => {
   });
 
   describe('Modifier Key Detection', () => {
-    test('detects Ctrl key on Windows/Linux', () => {
+    test('detects Alt key for feature shortcuts', () => {
       const event = new KeyboardEvent('keydown', {
         key: 'b',
+        altKey: true
+      });
+      
+      expect(event.altKey).toBe(true);
+    });
+
+    test('detects Ctrl key for font size shortcuts', () => {
+      const event = new KeyboardEvent('keydown', {
+        key: '+',
         ctrlKey: true,
         metaKey: false
       });
@@ -66,9 +75,9 @@ describe('Keyboard Shortcut Helpers', () => {
       expect(event.ctrlKey || event.metaKey).toBe(true);
     });
 
-    test('detects Cmd key on Mac', () => {
+    test('detects Cmd key on Mac for font size shortcuts', () => {
       const event = new KeyboardEvent('keydown', {
-        key: 'b',
+        key: '+',
         ctrlKey: false,
         metaKey: true
       });
@@ -76,24 +85,15 @@ describe('Keyboard Shortcut Helpers', () => {
       expect(event.ctrlKey || event.metaKey).toBe(true);
     });
 
-    test('detects both Ctrl and Cmd', () => {
-      const event = new KeyboardEvent('keydown', {
-        key: 'b',
-        ctrlKey: true,
-        metaKey: true
-      });
-      
-      expect(event.ctrlKey || event.metaKey).toBe(true);
-    });
-
-    test('returns false when neither Ctrl nor Cmd pressed', () => {
+    test('returns false when no modifiers pressed', () => {
       const event = new KeyboardEvent('keydown', {
         key: 'b',
         ctrlKey: false,
-        metaKey: false
+        metaKey: false,
+        altKey: false
       });
       
-      expect(event.ctrlKey || event.metaKey).toBe(false);
+      expect(event.ctrlKey || event.metaKey || event.altKey).toBe(false);
     });
   });
 

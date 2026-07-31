@@ -10,6 +10,7 @@ let prefs      = Object.assign({}, DEFAULT_PREFERENCES);
 let saveTimer  = null;
 let currentCfi = null;
 let activeAnnotationData = null;
+let lastIframeClickPos = { x: 0, y: 0 };
 
 const $ = id => document.getElementById(id);
 
@@ -124,7 +125,6 @@ async function init() {
     }
 
     book.locations.generate(1024).then(() => {
-      console.log('[reader] locations generated, total:', book.locations.total);
     }).catch(e => {
       console.warn('[reader] locations generation failed:', e);
     });
@@ -154,7 +154,6 @@ function setupRenditionEvents() {
     if (!location || !location.start) return;
     currentCfi = location.start.cfi;
     const pct  = Math.round((location.start.percentage || 0) * 100);
-    console.log('[reader] relocated, percentage:', location.start.percentage, 'pct:', pct);
     progressDisplay.textContent = pct + '%';
 
     updateBookmarkIcon();
@@ -179,8 +178,25 @@ function setupRenditionEvents() {
     positionSelectionToolbar(selection, cfiRange);
   });
 
-  rendition.on('markClicked', (cfiRange, data) => {
-    openAnnotationPopup(cfiRange, data);
+  rendition.on('deselected', () => {
+    selectionToolbar.hidden = true;
+  });
+
+  rendition.on('markClicked', (cfiRange, data, e) => {
+    openAnnotationPopup(cfiRange, data, e);
+  });
+
+  rendition.on('rendered', () => {
+    const iframe = readerArea.querySelector('iframe');
+    if (iframe && iframe.contentDocument) {
+      iframe.contentDocument.addEventListener('keydown', handleKeydown);
+      iframe.contentDocument.addEventListener('click', (e) => {
+        const iframeRect = iframe.getBoundingClientRect();
+        lastIframeClickPos = { x: iframeRect.left + e.clientX, y: iframeRect.top + e.clientY };
+        selectionToolbar.hidden = true;
+        hideAnnotationPopup();
+      });
+    }
   });
 }
 
@@ -195,9 +211,12 @@ function positionSelectionToolbar(selection, cfiRange) {
   selectionToolbar.dataset.cfi   = cfiRange;
   selectionToolbar.dataset.text  = selection.toString().trim();
 
-  const top  = readerArea.offsetTop + rect.top - selectionToolbar.offsetHeight - 8;
-  const left = readerArea.offsetLeft + rect.left + (rect.width / 2) - (selectionToolbar.offsetWidth / 2);
-  selectionToolbar.style.top  = Math.max(readerArea.offsetTop + 4, top)  + 'px';
+  const iframe = readerArea.querySelector('iframe');
+  const iframeRect = iframe ? iframe.getBoundingClientRect() : { top: 0, left: 0 };
+
+  const top  = iframeRect.top + rect.top - selectionToolbar.offsetHeight - 8;
+  const left = iframeRect.left + rect.left + (rect.width / 2) - (selectionToolbar.offsetWidth / 2);
+  selectionToolbar.style.top  = Math.max(iframeRect.top + 4, top) + 'px';
   selectionToolbar.style.left = Math.max(4, Math.min(window.innerWidth - 160, left)) + 'px';
 }
 
@@ -236,14 +255,24 @@ selectionToolbar.querySelectorAll('.hl-btn').forEach(btn => {
   });
 });
 
-function openAnnotationPopup(cfiRange, data) {
+function openAnnotationPopup(cfiRange, data, clickEvent) {
   activeAnnotationData = { cfiRange, annotationId: data && data.annotationId };
   annotationNote.value     = (data && data.note) || '';
   annotationPopup.hidden   = false;
 
-  const panelRect = readerArea.getBoundingClientRect();
-  annotationPopup.style.top  = (panelRect.top + panelRect.height / 2 - 90) + 'px';
-  annotationPopup.style.left = (panelRect.left + panelRect.width / 2 - 130) + 'px';
+  const popupWidth  = 270;
+  const popupHeight = 180;
+
+  const anchorY = lastIframeClickPos.y || (readerArea.getBoundingClientRect().top + readerArea.getBoundingClientRect().height / 2);
+  const anchorX = lastIframeClickPos.x || (readerArea.getBoundingClientRect().left + readerArea.getBoundingClientRect().width  / 2);
+  let top  = anchorY - popupHeight - 12;
+  let left = anchorX - popupWidth / 2;
+
+  top  = Math.max(8, Math.min(window.innerHeight - popupHeight - 8, top));
+  left = Math.max(8, Math.min(window.innerWidth  - popupWidth  - 8, left));
+
+  annotationPopup.style.top  = top  + 'px';
+  annotationPopup.style.left = left + 'px';
 
   annotationPopup.querySelectorAll('.hl-btn--sm').forEach(btn => {
     btn.style.outline = btn.dataset.color === (data && data.color) ? '2px solid #333' : '';
@@ -251,10 +280,8 @@ function openAnnotationPopup(cfiRange, data) {
 }
 
 function hideAnnotationPopup() {
-  console.log('[reader] hideAnnotationPopup called, setting hidden=true');
   annotationPopup.hidden = true;
   activeAnnotationData   = null;
-  console.log('[reader] annotationPopup.hidden is now:', annotationPopup.hidden);
 }
 
 annotationPopup.querySelectorAll('.hl-btn--sm').forEach(btn => {
@@ -265,12 +292,10 @@ annotationPopup.querySelectorAll('.hl-btn--sm').forEach(btn => {
 });
 
 annotationSave.addEventListener('click', async () => {
-  console.log('[reader] annotationSave clicked, activeAnnotationData:', activeAnnotationData);
   if (!activeAnnotationData) return;
   const note  = annotationNote.value.trim();
   const color = [...annotationPopup.querySelectorAll('.hl-btn--sm')]
     .find(b => b.style.outline)?.dataset.color || null;
-  console.log('[reader] saving annotation, note:', note, 'color:', color);
   await msg(MessageType.ANNOTATION_UPDATE, {
     bookId,
     annotationId: activeAnnotationData.annotationId,
@@ -285,41 +310,40 @@ annotationSave.addEventListener('click', async () => {
     color 
   }, null, 'hl-' + (color || 'yellow'));
   
-  console.log('[reader] calling hideAnnotationPopup');
   hideAnnotationPopup();
   refreshAnnotationsPanel();
 });
 
 annotationRemove.addEventListener('click', async () => {
-  console.log('[reader] annotationRemove clicked, cfiRange:', activeAnnotationData.cfiRange);
   if (!activeAnnotationData) return;
-  const resp = await msg(MessageType.ANNOTATION_REMOVE, {
+  await msg(MessageType.ANNOTATION_REMOVE, {
     bookId,
     annotationId: activeAnnotationData.annotationId,
   });
-  console.log('[reader] ANNOTATION_REMOVE response:', resp);
   
   try {
     rendition.annotations.remove(activeAnnotationData.cfiRange, 'highlight');
-    console.log('[reader] called rendition.annotations.remove with type');
   } catch (e) {
     console.warn('[reader] rendition.annotations.remove failed:', e);
   }
-  
+
   const iframe = readerArea.querySelector('iframe');
   if (iframe && iframe.contentDocument) {
-    const highlights = iframe.contentDocument.querySelectorAll(`[data-epubcfi*="${activeAnnotationData.annotationId}"]`);
-    console.log('[reader] found', highlights.length, 'highlight elements to remove');
-    highlights.forEach(el => el.outerHTML = el.textContent);
+    const cfi = activeAnnotationData.cfiRange;
+    iframe.contentDocument.querySelectorAll('.hl-yellow, .hl-green, .hl-blue, .hl-pink, [data-epubcfi]').forEach(el => {
+      if (el.getAttribute('data-epubcfi') === cfi) {
+        const parent = el.parentNode;
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
+      }
+    });
   }
   
-  console.log('[reader] calling hideAnnotationPopup');
   hideAnnotationPopup();
   refreshAnnotationsPanel();
 });
 
 annotationCancel.addEventListener('click', () => {
-  console.log('[reader] annotationCancel clicked');
   hideAnnotationPopup();
 });
 
@@ -367,7 +391,7 @@ async function updateBookmarkIcon() {
   const resp = await msg(MessageType.BOOKMARK_CHECK, { bookId, cfi: currentCfi });
   if (resp.success) {
     btnBookmark.classList.toggle('active', resp.data.exists);
-    btnBookmark.title = resp.data.exists ? 'Remove bookmark (Ctrl+B)' : 'Bookmark (Ctrl+B)';
+    btnBookmark.title = resp.data.exists ? 'Remove bookmark (Alt+B)' : 'Bookmark (Alt+B)';
   }
 }
 
@@ -657,7 +681,7 @@ function shouldHandleShortcut(event, context) {
   return false;
 }
 
-document.addEventListener('keydown', e => {
+function handleKeydown(e) {
   const typing = isTypingContext();
 
   if (e.key === '?' && !typing) {
@@ -681,13 +705,13 @@ document.addEventListener('keydown', e => {
     return;
   }
 
-  if (e.ctrlKey || e.metaKey) {
+  if (e.altKey) {
     switch (e.key) {
       case 'b': case 'B':
         e.preventDefault();
         btnBookmark.click();
         break;
-      case 'f': case 'F':
+      case 's': case 'S':
         e.preventDefault();
         btnSearch.click();
         break;
@@ -703,6 +727,12 @@ document.addEventListener('keydown', e => {
         e.preventDefault();
         cycleTheme();
         break;
+    }
+    return;
+  }
+
+  if (e.ctrlKey || e.metaKey) {
+    switch (e.key) {
       case '=': case '+':
         e.preventDefault();
         adjustFontSize(10);
@@ -724,7 +754,9 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     rendition && rendition.prev();
   }
-});
+}
+
+document.addEventListener('keydown', handleKeydown);
 
 function cycleTheme() {
   const order = ['light', 'dark', 'sepia'];

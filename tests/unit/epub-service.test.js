@@ -119,23 +119,64 @@ describe('applyPreferences', () => {
 
 describe('searchBook', () => {
   test('returns [] for empty query', async () => {
-    const book = { search: jest.fn() };
+    const book = { spine: { spineItems: [] } };
     const result = await searchBook(book, '');
     expect(result).toEqual([]);
-    expect(book.search).not.toHaveBeenCalled();
   });
 
-  test('returns results from book.search', async () => {
-    const results = [{ cfi: 'epubcfi(/6/2!)', excerpt: 'hello world' }];
-    const book = { search: jest.fn().mockResolvedValue(results) };
+  test('returns results using item.find()', async () => {
+    const findings = [{ cfi: 'epubcfi(/6/2!/4/2)', excerpt: 'hello world' }];
+    const mockItem = {
+      load: jest.fn().mockResolvedValue({}),
+      find: jest.fn().mockResolvedValue(findings),
+      unload: jest.fn()
+    };
+    const book = {
+      spine: { spineItems: [mockItem] },
+      load: jest.fn()
+    };
     const r = await searchBook(book, 'hello');
-    expect(r).toEqual(results);
+    expect(r).toEqual(findings);
+    expect(mockItem.find).toHaveBeenCalledWith('hello');
+    expect(mockItem.unload).toHaveBeenCalled();
   });
 
-  test('returns [] when book.search throws', async () => {
-    const book = { search: jest.fn().mockRejectedValue(new Error('search failed')) };
+  test('returns [] when book has no spine', async () => {
+    const book = { };
     const r = await searchBook(book, 'query');
     expect(r).toEqual([]);
+  });
+
+  test('returns [] when item.find throws', async () => {
+    const mockItem = {
+      load: jest.fn().mockResolvedValue({}),
+      find: jest.fn().mockRejectedValue(new Error('find failed')),
+      unload: jest.fn()
+    };
+    const book = {
+      spine: { spineItems: [mockItem] },
+      load: jest.fn()
+    };
+    const r = await searchBook(book, 'query');
+    expect(r).toEqual([]);
+  });
+
+  test('caps results at 50', async () => {
+    const findings = Array.from({ length: 60 }, (_, i) => ({
+      cfi: `epubcfi(/6/${i}!)`,
+      excerpt: `result ${i}`
+    }));
+    const mockItem = {
+      load: jest.fn().mockResolvedValue({}),
+      find: jest.fn().mockResolvedValue(findings),
+      unload: jest.fn()
+    };
+    const book = {
+      spine: { spineItems: [mockItem] },
+      load: jest.fn()
+    };
+    const r = await searchBook(book, 'result');
+    expect(r.length).toBe(50);
   });
 });
 

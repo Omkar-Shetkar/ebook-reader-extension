@@ -38,6 +38,13 @@ function registerThemes(rendition) {
     },
     a: { color: '#8b4513' },
   });
+
+  rendition.themes.default({
+    '.hl-yellow': { background: 'rgba(255, 215, 0, 0.45)  !important', 'border-radius': '2px' },
+    '.hl-green':  { background: 'rgba(124, 252, 0, 0.45)  !important', 'border-radius': '2px' },
+    '.hl-blue':   { background: 'rgba(135, 206, 235, 0.55) !important', 'border-radius': '2px' },
+    '.hl-pink':   { background: 'rgba(255, 182, 193, 0.55) !important', 'border-radius': '2px' },
+  });
 }
 
 function applyPreferences(rendition, prefs) {
@@ -83,9 +90,32 @@ async function goToCfi(rendition, cfi) {
 async function searchBook(book, query) {
   if (!query || !query.trim()) return [];
   try {
-    const results = await book.search(query.trim());
-    return Array.isArray(results) ? results : [];
+    if (!book || typeof book.spine === 'undefined') {
+      console.error('[searchBook] Invalid book object');
+      return [];
+    }
+
+    const results = [];
+    const q = query.trim();
+
+    for (const item of book.spine.spineItems) {
+      try {
+        await item.load(book.load.bind(book));
+        const findings = await item.find(q);
+        if (Array.isArray(findings)) {
+          const remaining = 50 - results.length;
+          findings.slice(0, remaining).forEach(f => results.push(f));
+        }
+        item.unload();
+        if (results.length >= 50) break;
+      } catch (e) {
+        console.warn('[searchBook] Error searching item:', item.href, e);
+      }
+    }
+
+    return results;
   } catch (e) {
+    console.error('[searchBook] Search error:', e);
     return [];
   }
 }
