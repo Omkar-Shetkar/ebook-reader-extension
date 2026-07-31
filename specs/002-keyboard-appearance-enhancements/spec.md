@@ -2,7 +2,7 @@
 
 **Feature Branch**: `002-keyboard-appearance-enhancements`  
 **Created**: August 1, 2026  
-**Status**: Draft  
+**Status**: Implemented  
 **Input**: User description: "Seamless keyboard shortcut integration. Robust Appearance functionality"
 
 ## User Scenarios & Testing *(mandatory)*
@@ -19,10 +19,10 @@ A reader wants to navigate through their ebook and access common features withou
 
 1. **Given** a reader is viewing an ebook, **When** they press the right arrow key or spacebar, **Then** the reader advances to the next page
 2. **Given** a reader is viewing an ebook, **When** they press the left arrow key or Shift+Space, **Then** the reader goes to the previous page
-3. **Given** a reader is viewing an ebook, **When** they press Ctrl+B (or Cmd+B on Mac), **Then** a bookmark is added or removed at the current location
-4. **Given** a reader is viewing an ebook, **When** they press Ctrl+F, **Then** the search bar opens and receives focus
-5. **Given** a reader is viewing an ebook, **When** they press Ctrl+T, **Then** the table of contents panel toggles open/closed
-6. **Given** a reader is viewing an ebook, **When** they press Ctrl+A, **Then** the annotations panel toggles open/closed
+3. **Given** a reader is viewing an ebook, **When** they press Alt+B, **Then** a bookmark is added or removed at the current location
+4. **Given** a reader is viewing an ebook, **When** they press Alt+S, **Then** the search bar opens and receives focus
+5. **Given** a reader is viewing an ebook, **When** they press Alt+T, **Then** the table of contents panel toggles open/closed
+6. **Given** a reader is viewing an ebook, **When** they press Alt+A, **Then** the annotations panel toggles open/closed
 7. **Given** a reader has the search bar open, **When** they press Escape, **Then** the search bar closes and focus returns to the reading area
 8. **Given** a reader has any side panel open, **When** they press Escape, **Then** the panel closes
 
@@ -34,13 +34,13 @@ A reader wants to quickly adjust the reading appearance (theme, font size) using
 
 **Why this priority**: Quick appearance adjustments are essential for reading comfort and accessibility. Users frequently need to change themes (light/dark) based on ambient lighting or adjust font size for readability. Requiring mouse interaction for these common tasks disrupts the reading flow.
 
-**Independent Test**: Can be fully tested by opening any ebook and using Ctrl+D to cycle through themes, Ctrl++ to increase font size, and Ctrl+- to decrease font size. Delivers immediate value by enabling rapid appearance customization.
+**Independent Test**: Can be fully tested by opening any ebook and using Alt+D to cycle through themes, Ctrl++ to increase font size, and Ctrl+- to decrease font size. Delivers immediate value by enabling rapid appearance customization.
 
 **Acceptance Scenarios**:
 
-1. **Given** a reader is viewing an ebook with light theme active, **When** they press Ctrl+D, **Then** the theme cycles to dark theme with immediate visual feedback
-2. **Given** a reader is viewing an ebook with dark theme active, **When** they press Ctrl+D, **Then** the theme cycles to sepia theme
-3. **Given** a reader is viewing an ebook with sepia theme active, **When** they press Ctrl+D, **Then** the theme cycles back to light theme
+1. **Given** a reader is viewing an ebook with light theme active, **When** they press Alt+D, **Then** the theme cycles to dark theme with immediate visual feedback
+2. **Given** a reader is viewing an ebook with dark theme active, **When** they press Alt+D, **Then** the theme cycles to sepia theme
+3. **Given** a reader is viewing an ebook with sepia theme active, **When** they press Alt+D, **Then** the theme cycles back to light theme
 4. **Given** a reader is viewing an ebook, **When** they press Ctrl++ (or Ctrl+=), **Then** the font size increases by 10% with visible change
 5. **Given** a reader is viewing an ebook, **When** they press Ctrl+-, **Then** the font size decreases by 10% with visible change
 6. **Given** a reader has adjusted appearance settings, **When** they close and reopen the book, **Then** their appearance preferences persist
@@ -124,18 +124,18 @@ A reader who is typing in an input field (search box, bookmark label, annotation
 
 - **FR-001**: System MUST respond to arrow key navigation (Right/Left) to advance or go back pages in the reading view
 - **FR-002**: System MUST respond to spacebar for next page and Shift+Space for previous page
-- **FR-003**: System MUST respond to Ctrl+B (Cmd+B on Mac) to toggle bookmark at current location
-- **FR-004**: System MUST respond to Ctrl+F to open and focus the search bar
-- **FR-005**: System MUST respond to Ctrl+T to toggle the table of contents panel
-- **FR-006**: System MUST respond to Ctrl+A to toggle the annotations panel
-- **FR-007**: System MUST respond to Ctrl+D to cycle through themes (light → dark → sepia → light)
+- **FR-003**: System MUST respond to Alt+B to toggle bookmark at current location
+- **FR-004**: System MUST respond to Alt+S to open and focus the search bar (Alt+F avoided due to Firefox File menu conflict)
+- **FR-005**: System MUST respond to Alt+T to toggle the table of contents panel
+- **FR-006**: System MUST respond to Alt+A to toggle the annotations panel
+- **FR-007**: System MUST respond to Alt+D to cycle through themes (light → dark → sepia → light)
 - **FR-008**: System MUST respond to Ctrl++ or Ctrl+= to increase font size by 10%
 - **FR-009**: System MUST respond to Ctrl+- to decrease font size by 10%
 - **FR-010**: System MUST respond to ? key to toggle the keyboard shortcuts help overlay
 - **FR-011**: System MUST respond to Escape key to close any open panel, search bar, or modal overlay
 - **FR-012**: System MUST disable navigation shortcuts (arrows, spacebar) when text input fields have focus
 - **FR-013**: System MUST prevent default browser behavior for all registered keyboard shortcuts
-- **FR-014**: System MUST support both Ctrl (Windows/Linux) and Cmd (Mac) modifiers for all shortcuts
+- **FR-014**: System MUST use Alt modifier for feature shortcuts (Bookmark, Search, TOC, Annotations, Theme) to avoid browser conflicts; Ctrl/Cmd for font size only
 
 #### Appearance Controls
 
@@ -182,15 +182,16 @@ A reader who is typing in an input field (search box, bookmark label, annotation
 - **SC-005**: Users can discover all available keyboard shortcuts within 5 seconds by pressing the ? key
 - **SC-006**: Zero instances of keyboard shortcuts triggering unintended actions when typing in input fields
 - **SC-007**: Font size adjustments remain within defined bounds (50-200%) with no visual glitches or layout breaks
-- **SC-008**: Theme cycling via Ctrl+D completes the full cycle (light → dark → sepia → light) in under 3 seconds
+- **SC-008**: Theme cycling via Alt+D completes the full cycle (light → dark → sepia → light) in under 3 seconds
 - **SC-009**: All appearance panel controls (buttons, dropdowns, sliders) provide immediate visual feedback within 100 milliseconds
 - **SC-010**: Users can customize their reading appearance to meet personal readability needs using any combination of available controls
 
 ## Assumptions
 
-- Users are familiar with standard keyboard shortcut conventions (Ctrl+F for find, Ctrl+B for bookmark, etc.)
+- Users are familiar with standard keyboard shortcut conventions
 - Users have access to a physical keyboard (not limited to touch-only devices)
-- The browser environment supports standard keyboard event handling and does not override critical shortcuts
+- Alt-based shortcuts are used for feature access to avoid conflicts with Firefox built-in shortcuts (e.g., Ctrl+F for browser Find, Alt+F for Firefox File menu)
+- The browser environment supports standard keyboard event handling and does not override Alt-based shortcuts
 - Appearance preferences are stored in browser local storage with sufficient quota available
 - The EPUB rendering engine (epub.js) supports dynamic theme and typography changes
 - Users expect Ctrl key on Windows/Linux and Cmd key on Mac for modifier-based shortcuts
