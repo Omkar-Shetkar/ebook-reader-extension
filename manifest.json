@@ -1,0 +1,45 @@
+{
+  "manifest_version": 2,
+  "name": "Ebook Reader",
+  "version": "0.1.0",
+  "description": "Read EPUB files in Firefox. Supports bookmarks, highlights, annotations, search, and a personal library — all stored locally.",
+  "icons": {
+    "48": "icons/icon-48.svg",
+    "96": "icons/icon-96.svg"
+  },
+  "browser_action": {
+    "default_icon": {
+      "48": "icons/icon-48.svg",
+      "96": "icons/icon-96.svg"
+    },
+    "default_title": "Ebook Reader",
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "scripts": [
+      "vendor/jszip.min.js",
+      "vendor/epub.min.js",
+      "shared/constants.js",
+      "shared/storage.js",
+      "shared/library-service.js",
+      "shared/annotation-service.js",
+      "background/background.js"
+    ],
+    "persistent": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ebook-reader@local",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "tabs"
+  ],
+  "web_accessible_resources": [
+    "reader/reader.html",
+    "vendor/epub.min.js"
+  ]
+}

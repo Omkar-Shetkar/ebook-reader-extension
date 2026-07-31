@@ -1,0 +1,20 @@
+{
+  "name": "ebook-reader-firefox-extension",
+  "version": "0.1.0",
+  "description": "A Firefox extension for reading EPUB files locally with a rich reading experience.",
+  "scripts": {
+    "postinstall": "node -e \"const fs=require('fs');fs.mkdirSync('vendor',{recursive:true});fs.copyFileSync('node_modules/jszip/dist/jszip.min.js','vendor/jszip.min.js');fs.copyFileSync('node_modules/epubjs/dist/epub.min.js','vendor/epub.min.js');console.log('vendored jszip.min.js and epub.min.js');\"",
+    "dev": "web-ext run --source-dir .",
+    "lint": "web-ext lint --source-dir .",
+    "build": "web-ext build --source-dir . --artifacts-dir dist/",
+    "test": "jest"
+  },
+  "dependencies": {
+    "epubjs": "^0.3.93"
+  },
+  "devDependencies": {
+    "web-ext": "^8.0.0",
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0"
+  }
+}

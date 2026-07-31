@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ebook Reader</title>
+  <link rel="stylesheet" href="reader.css">
+</head>
+<body>
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Opening book…</p>
+  </div>
+
+  <header id="toolbar" class="toolbar">
+    <div class="toolbar__left">
+      <button id="btn-toc"         class="toolbar__btn" title="Table of Contents (Alt+T)">&#9776;</button>
+      <span   id="book-title"      class="toolbar__title"></span>
+    </div>
+    <div class="toolbar__center">
+      <button id="btn-prev" class="toolbar__btn toolbar__nav" title="Previous page (←)">&#8592;</button>
+      <span   id="progress-display" class="toolbar__progress">0%</span>
+      <button id="btn-next" class="toolbar__btn toolbar__nav" title="Next page (→)">&#8594;</button>
+    </div>
+    <div class="toolbar__right">
+      <button id="btn-bookmark"    class="toolbar__btn" title="Bookmark (Alt+B)">&#128278;</button>
+      <button id="btn-annotations" class="toolbar__btn" title="Highlights &amp; Notes (Alt+A)">&#9998;</button>
+      <button id="btn-search"      class="toolbar__btn" title="Search (Alt+S)">&#128269;</button>
+      <button id="btn-appearance"  class="toolbar__btn" title="Appearance">&#65291;</button>
+    </div>
+  </header>
+
+  <div id="search-bar" class="search-bar" hidden>
+    <form id="search-form" class="search-form">
+      <input type="text" id="search-input" class="search-input" placeholder="Search in book…" autocomplete="off">
+      <button type="submit" class="search-submit">Go</button>
+      <button type="button" id="search-close" class="search-close">&times;</button>
+    </form>
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+
+  <div id="reader-area" class="reader-area"></div>
+
+  <div id="error-state" class="error-state" hidden>
+    <p id="error-message"></p>
+    <button id="btn-go-library" class="btn-go-library">Go to Library</button>
+  </div>
+
+  <aside id="toc-panel" class="side-panel side-panel--left" hidden>
+    <div class="side-panel__header">
+      <h2 class="side-panel__title">Contents</h2>
+      <button class="side-panel__close" data-closes="toc-panel">&times;</button>
+    </div>
+    <ul id="toc-list" class="toc-list"></ul>
+    <p id="toc-empty" class="panel-empty" hidden>No table of contents available.</p>
+  </aside>
+
+  <aside id="bookmarks-panel" class="side-panel side-panel--right" hidden>
+    <div class="side-panel__header">
+      <h2 class="side-panel__title">Bookmarks</h2>
+      <button class="side-panel__close" data-closes="bookmarks-panel">&times;</button>
+    </div>
+    <div id="bookmark-label-input" class="bookmark-label-wrap" hidden>
+      <input type="text" id="bookmark-label" class="bookmark-label" placeholder="Label (optional)">
+      <button id="bookmark-save" class="btn-save">Save</button>
+      <button id="bookmark-cancel" class="btn-cancel">Cancel</button>
+    </div>
+    <ul id="bookmarks-list" class="panel-list"></ul>
+    <p id="bookmarks-empty" class="panel-empty">No bookmarks yet.</p>
+  </aside>
+
+  <aside id="annotations-panel" class="side-panel side-panel--right" hidden>
+    <div class="side-panel__header">
+      <h2 class="side-panel__title">Highlights &amp; Notes</h2>
+      <button class="side-panel__close" data-closes="annotations-panel">&times;</button>
+    </div>
+    <ul id="annotations-list" class="panel-list"></ul>
+    <p id="annotations-empty" class="panel-empty">No highlights yet.</p>
+  </aside>
+
+  <aside id="appearance-panel" class="side-panel side-panel--right" hidden>
+    <div class="side-panel__header">
+      <h2 class="side-panel__title">Appearance</h2>
+      <button class="side-panel__close" data-closes="appearance-panel">&times;</button>
+    </div>
+    <div class="appearance-body">
+      <div class="appearance-row">
+        <label class="appearance-label">Theme</label>
+        <div class="theme-btns">
+          <button class="theme-btn" data-theme="light">Light</button>
+          <button class="theme-btn" data-theme="dark">Dark</button>
+          <button class="theme-btn" data-theme="sepia">Sepia</button>
+        </div>
+      </div>
+      <div class="appearance-row">
+        <label class="appearance-label">Font</label>
+        <select id="font-select" class="appearance-select"></select>
+      </div>
+      <div class="appearance-row">
+        <label class="appearance-label">Size</label>
+        <div class="size-controls">
+          <button id="font-decrease" class="size-btn">A&#8722;</button>
+          <span   id="font-size-display" class="size-display">100%</span>
+          <button id="font-increase" class="size-btn">A+</button>
+        </div>
+      </div>
+      <div class="appearance-row">
+        <label class="appearance-label">Spacing</label>
+        <input type="range" id="line-height-slider" class="appearance-slider" min="1.0" max="2.5" step="0.1">
+      </div>
+      <div class="appearance-row">
+        <label class="appearance-label">Margins</label>
+        <input type="range" id="margin-slider" class="appearance-slider" min="0" max="20" step="2">
+      </div>
+    </div>
+  </aside>
+
+  <div id="selection-toolbar" class="selection-toolbar" hidden>
+    <button class="hl-btn" data-color="yellow" title="Highlight yellow" style="background:#FFD700"></button>
+    <button class="hl-btn" data-color="green"  title="Highlight green"  style="background:#7CFC00"></button>
+    <button class="hl-btn" data-color="blue"   title="Highlight blue"   style="background:#87CEEB"></button>
+    <button class="hl-btn" data-color="pink"   title="Highlight pink"   style="background:#FFB6C1"></button>
+  </div>
+
+  <div id="annotation-popup" class="annotation-popup" hidden>
+    <textarea id="annotation-note" class="annotation-note" placeholder="Add a note…" rows="4"></textarea>
+    <div class="annotation-popup__colors">
+      <button class="hl-btn hl-btn--sm" data-color="yellow" style="background:#FFD700"></button>
+      <button class="hl-btn hl-btn--sm" data-color="green"  style="background:#7CFC00"></button>
+      <button class="hl-btn hl-btn--sm" data-color="blue"   style="background:#87CEEB"></button>
+      <button class="hl-btn hl-btn--sm" data-color="pink"   style="background:#FFB6C1"></button>
+    </div>
+    <div class="annotation-popup__actions">
+      <button id="annotation-save"   class="btn-save">Save</button>
+      <button id="annotation-remove" class="btn-danger">Remove</button>
+      <button id="annotation-cancel" class="btn-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <div id="shortcuts-overlay" class="shortcuts-overlay" hidden>
+    <div class="shortcuts-modal">
+      <h2>Keyboard Shortcuts</h2>
+      <button class="shortcuts-close">&times;</button>
+      <table class="shortcuts-table">
+        <tbody>
+          <tr><td>Next page</td><td><kbd>→</kbd> / <kbd>Space</kbd></td></tr>
+          <tr><td>Previous page</td><td><kbd>←</kbd> / <kbd>Shift+Space</kbd></td></tr>
+          <tr><td>Bookmark page</td><td><kbd>Alt+B</kbd></td></tr>
+          <tr><td>Search</td><td><kbd>Alt+S</kbd></td></tr>
+          <tr><td>Table of contents</td><td><kbd>Alt+T</kbd></td></tr>
+          <tr><td>Annotations panel</td><td><kbd>Alt+A</kbd></td></tr>
+          <tr><td>Cycle theme</td><td><kbd>Alt+D</kbd></td></tr>
+          <tr><td>Larger text</td><td><kbd>Ctrl++</kbd></td></tr>
+          <tr><td>Smaller text</td><td><kbd>Ctrl+–</kbd></td></tr>
+          <tr><td>Close panels/overlays</td><td><kbd>Escape</kbd></td></tr>
+          <tr><td>This help</td><td><kbd>?</kbd></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="../vendor/jszip.min.js"></script>
+  <script src="../vendor/epub.min.js"></script>
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="../shared/epub-service.js"></script>
+  <script src="reader.js"></script>
+</body>
+</html>
